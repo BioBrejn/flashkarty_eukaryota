@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flashkarty – Eukaryota | BioBrejn</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f2eb;
+    --surface: #ffffff;
+    --surface2: #edeae1;
+    --text: #1a1a18;
+    --text2: #5a5850;
+    --text3: #9a9688;
+    --accent: #2d5a3d;
+    --accent-light: #e8f0ea;
+    --danger: #8b3a2a;
+    --danger-light: #f5ece9;
+    --border: rgba(26,26,24,0.10);
+    --border2: rgba(26,26,24,0.18);
+    --radius: 16px;
+    --radius-sm: 8px;
+    --shadow: 0 2px 12px rgba(26,26,24,0.08);
+    --shadow-lg: 0 8px 32px rgba(26,26,24,0.13);
+    --font: 'DM Sans', sans-serif;
+    --font-display: 'DM Serif Display', serif;
+  }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: var(--accent);
+    color: #fff;
+    padding: 1.25rem 1.25rem 1rem;
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 0.75rem;
+  }
+  .header-logo {
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    color: rgba(255,255,255,0.7);
+    letter-spacing: 0.01em;
+  }
+  .header-sep { color: rgba(255,255,255,0.3); }
+  .header-title {
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    color: #fff;
+  }
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .progress-track {
+    flex: 1;
+    height: 3px;
+    background: rgba(255,255,255,0.25);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: #fff;
+    border-radius: 2px;
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+  .progress-label {
+    font-size: 12px;
+    color: rgba(255,255,255,0.75);
+    min-width: 42px;
+    text-align: right;
+  }
+
+  /* ── Category pills ── */
+  .cat-wrap {
+    padding: 0.875rem 1.25rem 0;
+    display: flex;
+    gap: 6px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .cat-wrap::-webkit-scrollbar { display: none; }
+  .cat-pill {
+    flex-shrink: 0;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1.5px solid var(--border2);
+    background: var(--surface);
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .cat-pill.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  /* ── Main area ── */
+  .main {
+    padding: 1rem 1.25rem 2rem;
+    max-width: 560px;
+    margin: 0 auto;
+  }
+
+  /* ── Card ── */
+  .scene {
+    perspective: 1200px;
+    height: 260px;
+    margin: 0.75rem 0 1rem;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+  @media (min-width: 480px) {
+    .scene { height: 280px; }
+  }
+  .card-inner {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .card-inner.flipped { transform: rotateY(180deg); }
+
+  .card-face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-radius: var(--radius);
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem 1.5rem 1.25rem;
+  }
+  .card-back {
+    transform: rotateY(180deg);
+    background: #fafaf7;
+  }
+
+  .card-cat {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.75rem;
+  }
+  .card-body {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .card-question {
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    line-height: 1.5;
+    color: var(--text);
+    text-align: center;
+  }
+  .card-answer {
+    font-size: 0.925rem;
+    line-height: 1.65;
+    color: var(--text);
+    text-align: center;
+  }
+  .card-hint {
+    font-size: 11px;
+    color: var(--text3);
+    text-align: center;
+    margin-top: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+  }
+  .hint-icon {
+    width: 14px;
+    height: 14px;
+    border: 1.5px solid var(--text3);
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+  }
+
+  /* ── Controls ── */
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 8px;
+    align-items: center;
+  }
+  .btn {
+    padding: 12px 0;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border2);
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+    text-align: center;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-wrong {
+    border-color: var(--danger-light);
+    background: var(--danger-light);
+    color: var(--danger);
+  }
+  .btn-wrong:active { background: #eedad6; }
+  .btn-right {
+    border-color: var(--accent-light);
+    background: var(--accent-light);
+    color: var(--accent);
+  }
+  .btn-right:active { background: #d8e8db; }
+  .btn-flip {
+    padding: 12px 16px;
+    font-size: 18px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border2);
+    background: var(--surface);
+    cursor: pointer;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-flip:active { transform: scale(0.95); }
+
+  /* ── Stats bar ── */
+  .stats {
+    display: flex;
+    gap: 0;
+    margin-top: 1rem;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    border: 1.5px solid var(--border);
+  }
+  .stat {
+    flex: 1;
+    padding: 8px 6px;
+    text-align: center;
+    background: var(--surface);
+  }
+  .stat + .stat { border-left: 1.5px solid var(--border); }
+  .stat-val {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.1;
+    display: block;
+  }
+  .stat-lbl {
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    display: block;
+    margin-top: 2px;
+  }
+  .stat-val.green { color: var(--accent); }
+  .stat-val.red { color: var(--danger); }
+  .stat-val.gray { color: var(--text2); }
+
+  /* ── Done state ── */
+  .done-card {
+    width: 100%;
+    height: 260px;
+    border-radius: var(--radius);
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 0.75rem 0 1rem;
+    text-align: center;
+    padding: 1.5rem;
+  }
+  .done-emoji { font-size: 2.5rem; }
+  .done-title {
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    color: var(--text);
+  }
+  .done-sub { font-size: 0.9rem; color: var(--text2); }
+  .btn-restart {
+    margin-top: 0.5rem;
+    padding: 10px 24px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--accent);
+    background: var(--accent);
+    color: #fff;
+    font-family: var(--font);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .btn-restart:hover { opacity: 0.88; }
+
+  /* ── Swipe hint ── */
+  .swipe-hint {
+    font-size: 11px;
+    color: var(--text3);
+    text-align: center;
+    margin-top: 0.5rem;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <span class="header-logo">BioBrejn</span>
+    <span class="header-sep">›</span>
+    <span class="header-title">Eukaryota – Flashkarty</span>
+  </div>
+  <div class="progress-row">
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="progress-label" id="progressLabel">0 / 0</span>
+  </div>
+</div>
+
+<div class="cat-wrap" id="catWrap"></div>
+
+<div class="main">
+
+  <!-- Card -->
+  <div id="cardContainer">
+    <div class="scene" id="scene" onclick="handleFlip()">
+      <div class="card-inner" id="cardInner">
+        <div class="card-face card-front">
+          <div class="card-cat" id="frontCat"></div>
+          <div class="card-body">
+            <div class="card-question" id="question"></div>
+          </div>
+          <div class="card-hint">
+            <span class="hint-icon">↕</span>
+            Klepni pro odpověď
+          </div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-cat" id="backCat"></div>
+          <div class="card-body">
+            <div class="card-answer" id="answer"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="btn btn-wrong" onclick="rate(false)">✕ Nevím</button>
+      <button class="btn-flip" onclick="handleFlip()" title="Otočit">⟳</button>
+      <button class="btn btn-right" onclick="rate(true)">✓ Umím</button>
+    </div>
+  </div>
+
+  <!-- Done -->
+  <div id="doneContainer" style="display:none">
+    <div class="done-card">
+      <div class="done-emoji">🎉</div>
+      <div class="done-title" id="doneTitle">Hotovo!</div>
+      <div class="done-sub" id="doneSub"></div>
+      <button class="btn-restart" onclick="restart()">Procvičit znovu</button>
+    </div>
+    <div class="controls">
+      <div></div><div></div><div></div>
+    </div>
+  </div>
+
+  <div class="swipe-hint" id="swipeHint">Přejeď doleva = nevím &nbsp;·&nbsp; doprava = umím</div>
+
+  <div class="stats">
+    <div class="stat">
+      <span class="stat-val green" id="statCorrect">0</span>
+      <span class="stat-lbl">Správně</span>
+    </div>
+    <div class="stat">
+      <span class="stat-val red" id="statWrong">0</span>
+      <span class="stat-lbl">Chyby</span>
+    </div>
+    <div class="stat">
+      <span class="stat-val gray" id="statRemain">0</span>
+      <span class="stat-lbl">Zbývá</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const CARDS = [
+  // Základy eukaryotické buňky
+  { cat: "Základy", q: "Kdy přibližně vznikla eukaryotická buňka?", a: "Před 2,3–1,7 miliardami let (střední odhad: ~2 mld. let)." },
+  { cat: "Základy", q: "Co definuje eukaryotickou buňku – co ji odlišuje od prokaryotní?", a: "Přítomnost pravého jádra – DNA je fyzicky oddělena jadernou membránou od cytoplazmy; transkripce je tak oddělena od translace." },
+  { cat: "Základy", q: "Jaká je typická velikost eukaryotické buňky?", a: "Desítky mikrometrů – přibližně o řád větší než prokaryotická buňka." },
+  { cat: "Základy", q: "Co je nejmenší známý eukaryotický organismus?", a: "Zelená řasa Ostreococcus (průměr ~0,8 µm) – má jediný chloroplast a jedinou mitochondrii." },
+  { cat: "Základy", q: "Jaká je největší jednobuněčná eukaryota?", a: "Zelená řasa Valonia ventricosa – buňky dosahují průměru ~5 cm." },
+  { cat: "Základy", q: "Co zahrnuje endomembránový systém?", a: "Jadernou membránu, endoplazmatické retikulum, Golgiho komplex, lysozomy, peroxizomy a cytoplazmatickou membránu. Udržuje oddělená prostředí s různými podmínkami (pH atd.)." },
+  { cat: "Základy", q: "Jaké jsou tři základní složky eukaryotického cytoskeletu?", a: "Aktinová filamenta, intermediální filamenta a mikrotubuly." },
+  { cat: "Základy", q: "Jakou roli hrají intermediální filamenta?", a: "Dodávají buňce mechanickou pevnost – analogie armovacích tyčí v betonu." },
+  { cat: "Základy", q: "Proč jsou eukaryota tak velká – jaká organela to umožňuje?", a: "Mitochondrie – díky oxidativní fosforylaci dodávají velkým buňkám dostatečné množství ATP." },
+  { cat: "Základy", q: "Jaká výlučně eukaryotická vlastnost se týká rozmnožování?", a: "Pohlavní rozmnožování – mitóza i meióza jsou eukaryotickými novinkami, u prokaryot jádro neexistovalo." },
+
+  // GOE a prostředí
+  { cat: "GOE & prostředí", q: "Co je GOE (Great Oxidation Event)?", a: "Období ~400 milionů let, během nichž koncentrace O₂ vzrostla z nulových hodnot na ~2 %; způsobeno sinicemi. Vedlo k masovému vymírání anaerobů." },
+  { cat: "GOE & prostředí", q: "Proč se GOE někdy nazývá 'kyslíkový holokaust'?", a: "Dvě procenta O₂ stačila k vymření ohromného množství anaerobních druhů nebo jejich přesunu do anaerobních koutů Země." },
+  { cat: "GOE & prostředí", q: "Jaký metabolismus se rozvinul díky GOE?", a: "Oxidativní fosforylace – metabolismus schopný s kyslíkem pracovat a vyrábět ATP." },
+  { cat: "GOE & prostředí", q: "Jak vypadal prokaryotní svět těsně před vznikem eukaryot?", a: "Pestré prokaryotní společenstvo s různými metabolismy (aerobní–anaerobní přechod), syntrofické vztahy a běžný horizontální přenos genů (HGT)." },
+  { cat: "GOE & prostředí", q: "Jaký superkontinent existoval v době vzniku eukaryot?", a: "Columbie (jediný superkontinent té doby, ostatní část planety pokrýval oceán)." },
+
+  // Eukaryogeneze
+  { cat: "Eukaryogeneze", q: "Jakým archeálním skupinám mají eukaryota na molekulární úrovni nejblíže?", a: "Skupině Asgard – eukaryota a Asgard archea sdílejí společného předka, prokázáno srovnáváním DNA." },
+  { cat: "Eukaryogeneze", q: "Jaké dvě klíčové inovace předcházely pohlcení α-proteobakterie?", a: "1) Zánik buněčné stěny. 2) Vznik eukaryotického cytoskeletu. Obojí umožnilo fagocytózu a vznik membránových organel." },
+  { cat: "Eukaryogeneze", q: "Co je endosymbiotická teorie vzniku mitochondrií?", a: "α-proteobakterie byla fagocytována archeálním předkem, nebyla strávena a postupně se přeměnila v mitochondrii; všechny své geny přesunula do jádra hostitele (EGT)." },
+  { cat: "Eukaryogeneze", q: "Co je EGT (Endosymbiotic Gene Transfer)?", a: "Přesun téměř všech genů z pohlcené α-proteobakterie do jádra hostitele – mitochondrie tak ztratila možnost samostatné existence." },
+  { cat: "Eukaryogeneze", q: "Proč archea nemohou být monofyletickým taxonem (bez eukaryot)?", a: "Pokud eukaryota vznikla uvnitř archeí, archea bez eukaryot netvoří monofyletický taxon. Analogie: ptáci vs. plazi." },
+
+  // Tři teorie eukaryogeneze
+  { cat: "Tři teorie", q: "Co říká ox-tox hypotéza vzniku mitochondrie?", a: "Kyslík byl pro hostitele toxický; pohlcená α-proteobakterie ho vychytávala oxidativní fosforylací a chránila hostitele – to byl selektivní důvod pro udržení endosymbionta." },
+  { cat: "Tři teorie", q: "Jaká je hlavní slabina ox-tox hypotézy?", a: "Endosymbiont ke svému životu kyslík vyžadoval, takže nutil hostitele žít v pro něj toxickém kyslíkatém prostředí." },
+  { cat: "Tři teorie", q: "Co říká vodíková hypotéza vzniku mitochondrie?", a: "α-proteobakterie původně produkovaly H₂ a spolupracovaly s metanogenními archei; syntrofický vztah se postupně prohloubil až ve vznik mitochondrie. Podporuje ji existence hydrogenozomů." },
+  { cat: "Tři teorie", q: "Jaký je společný problém ox-tox i vodíkové hypotézy?", a: "Obě počítají s fagocytózou archaionem → cytoplazmatická membrána eukaryot by měla být archeálního typu. Všechna eukaryota však mají membrány bakteriálního typu." },
+  { cat: "Tři teorie", q: "Co tvrdí syntrofická teorie eukaryogeneze?", a: "Tři organismy (α-proteobakterie + δ-proteobakterie + archaeon ze skupiny Asgard, konkrétně Promethearchaeum syntrophicum) vytvořily syntrofický vztah, který vyústil ve vznik eukaryotické buňky." },
+  { cat: "Tři teorie", q: "Jak syntrofická teorie vysvětluje bakteriální typ membrány eukaryot?", a: "Cytoplazmatická membrána by pocházela z δ-proteobakterie; jádro z archaea; mitochondrie z α-proteobakterie." },
+
+  // FECA & LECA
+  { cat: "FECA & LECA", q: "Co je FECA?", a: "First Eukaryotic Common Ancestor – první eukaryotický organismus (~2 mld. let), od něhož se rozběhly různé populace eukaryot." },
+  { cat: "FECA & LECA", q: "Co je LECA?", a: "Last Eukaryotic Common Ancestor – poslední společný předek všech dnešních eukaryot; musel mít všechny klíčové eukaryotické znaky." },
+  { cat: "FECA & LECA", q: "Jaký je vztah mezi FECA a LECA?", a: "FECA byl první eukaryot; od něj se rozběhly různé populace, přičemž konkurenční linie zanikaly, dokud nezůstala jediná – LECA, předek všech současných eukaryot." },
+
+  // Fylogeneze a skupiny
+  { cat: "Skupiny eukaryot", q: "Jaké hlavní superskupiny eukaryot dnes rozlišujeme?", a: "Excavata, SAR (Stramenopiles, Alveolata, Rhizaria), Archaeplastida, Amoebozoa, Opisthokonta." },
+  { cat: "Skupiny eukaryot", q: "V jaké superskupině jsou lidé spolu se zvířaty a houbami?", a: "Opisthokonta." },
+  { cat: "Skupiny eukaryot", q: "Co je SAR a jak vznikl název?", a: "Superskupina eukaryot (2007, molekulární znaky) zahrnující Stramenopiles, Alveolata a Rhizaria – název z počátečních písmen." },
+  { cat: "Skupiny eukaryot", q: "Kde ve stromu eukaryot jsou pravé houby (hříbky, bedly)?", a: "V Opisthokonta – společně se zvířaty, nikoli v SAR jako oomycéty." },
+  { cat: "Skupiny eukaryot", q: "Proč jsou oomycéty (dříve 'houby') zařazeny do Stramenopiles (SAR)?", a: "Molekulární analýzy ukázaly, že jsou fylogeneticky zcela vzdálené pravým houbám – jde o konvergentní morfologii, nikoli příbuznost." },
+  { cat: "Skupiny eukaryot", q: "Kolikrát vznikla mnohobuněčnost v evoluci eukaryot?", a: "Několikrát nezávisle – u živočichů, rostlin, hub, hlenek (Amoebozoa), oomycét (Stramenopila). Každá skupina si ji řešila jinak." },
+  { cat: "Skupiny eukaryot", q: "Proč se fylogenetický strom eukaryot stále mění?", a: "Každou chvíli se objeví nebo osekvenuje nový organismus, což vede k přerovnávání větví, rozpadu nebo vzniku nových superskupin." },
+];
+
+// ── State ──
+let deck = [];
+let idx = 0;
+let correct = 0, wrong = 0;
+let rated = new Set();
+let isFlipped = false;
+let currentCat = "Vše";
+
+// ── Init ──
+function getCats() {
+  return ["Vše", ...new Set(CARDS.map(c => c.cat))];
+}
+
+function buildCats() {
+  const wrap = document.getElementById('catWrap');
+  wrap.innerHTML = '';
+  getCats().forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'cat-pill' + (cat === currentCat ? ' active' : '');
+    btn.textContent = cat;
+    btn.onclick = () => {
+      currentCat = cat;
+      resetSession();
+      buildCats();
+    };
+    wrap.appendChild(btn);
+  });
+}
+
+function resetSession() {
+  correct = 0; wrong = 0; rated.clear(); isFlipped = false;
+  deck = (currentCat === "Vše" ? [...CARDS] : CARDS.filter(c => c.cat === currentCat));
+  shuffle(deck);
+  idx = 0;
+  document.getElementById('cardInner').classList.remove('flipped');
+  document.getElementById('cardContainer').style.display = '';
+  document.getElementById('doneContainer').style.display = 'none';
+  showCard();
+  updateStats();
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+function showCard() {
+  if (!deck.length) return;
+  const c = deck[idx];
+  document.getElementById('question').textContent = c.q;
+  document.getElementById('answer').textContent = c.a;
+  document.getElementById('frontCat').textContent = c.cat;
+  document.getElementById('backCat').textContent = c.cat;
+  const done = rated.size;
+  const total = deck.length;
+  document.getElementById('progressFill').style.width = (done / total * 100) + '%';
+  document.getElementById('progressLabel').textContent = done + ' / ' + total;
+}
+
+function handleFlip() {
+  isFlipped = !isFlipped;
+  document.getElementById('cardInner').classList.toggle('flipped', isFlipped);
+}
+
+function rate(ok) {
+  if (!isFlipped) { handleFlip(); return; }
+  if (rated.has(idx)) { advance(); return; }
+  rated.add(idx);
+  if (ok) correct++; else wrong++;
+  updateStats();
+  if (rated.size >= deck.length) { showDone(); return; }
+  advance();
+}
+
+function advance() {
+  let next = (idx + 1) % deck.length;
+  let tries = 0;
+  while (rated.has(next) && tries < deck.length) { next = (next + 1) % deck.length; tries++; }
+  idx = next;
+  isFlipped = false;
+  document.getElementById('cardInner').classList.remove('flipped');
+  showCard();
+}
+
+function showDone() {
+  document.getElementById('cardContainer').style.display = 'none';
+  document.getElementById('doneContainer').style.display = '';
+  document.getElementById('doneTitle').textContent = correct + ' / ' + deck.length + ' správně';
+  const pct = Math.round(correct / deck.length * 100);
+  document.getElementById('doneSub').textContent = pct >= 80
+    ? 'Výborně! Látku ovládáš.' : pct >= 50
+    ? 'Dobrý základ, zkus to znovu.' : 'Procvič ještě jednou.';
+  document.getElementById('progressFill').style.width = '100%';
+  document.getElementById('progressLabel').textContent = deck.length + ' / ' + deck.length;
+}
+
+function restart() {
+  resetSession();
+}
+
+function updateStats() {
+  document.getElementById('statCorrect').textContent = correct;
+  document.getElementById('statWrong').textContent = wrong;
+  document.getElementById('statRemain').textContent = deck.length - rated.size;
+}
+
+// ── Touch/swipe support ──
+let touchStartX = 0, touchStartY = 0;
+const scene = document.getElementById('scene');
+
+scene.addEventListener('touchstart', e => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+}, { passive: true });
+
+scene.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+  if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+    if (!isFlipped) { handleFlip(); return; }
+    if (dx < 0) rate(false); else rate(true);
+  }
+}, { passive: true });
+
+// ── Start ──
+buildCats();
+resetSession();
+</script>
+</body>
+</html>
